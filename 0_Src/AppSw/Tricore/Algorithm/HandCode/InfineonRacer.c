@@ -8,9 +8,10 @@
 /*-----------------------------------Macros-----------------------------------*/
 /******************************************************************************/
 
-#define GAIN_ANGLE_P 0.01	// 조향 제어 P Gain
-#define GAIN_ANGLE_D 0.00005	// 조향 제어 D Gain
-#define GAIN_SPEED_P 2		// 속력 제어 P Gain
+//#define GAIN_ANGLE_P 0.01	// 조향 제어 P Gain
+//#define GAIN_ANGLE_D 0.00005	// 조향 제어 D Gain
+//#define GAIN_SPEED_P 2		// 속력 제어 P Gain
+
 #define TIME_sampling 0.02	// Line Scan Camera Sampling Time
 
 /* Line Scan Camera Constant values*/
@@ -57,6 +58,12 @@ typedef enum scan_state{
 
 InfineonRacer_t IR_Ctrl  /**< \brief  global data */
 		={64, 64, FALSE  };
+
+Handcode_t Handcode = {
+		.Gain_angle_p = 0.01,
+		.Gain_angle_d = 0.00005,
+		.Gain_speed_p = 2
+};
 
 CAR_state_t CAR_STATE;
 DASHLINE_state_t DASH_STATE;
@@ -296,7 +303,7 @@ void InfineonRacer_control(void){
 int ACTION_STEER(int ERROR, int ERROR_pre)
 {
 	float ANGLE; 	// Input of Servo motor
-	ANGLE = (GAIN_ANGLE_P * ERROR) - (GAIN_ANGLE_D * (ERROR-ERROR_pre)/TIME_sampling);
+	ANGLE = (IR_getGainAngleP() * ERROR) - (IR_getGainAngleP() * (ERROR-ERROR_pre)/TIME_sampling);
 
 	/* LOAD PROTECTION */
 	/* LEFT */

@@ -14,6 +14,10 @@
 /******************************************************************************/
 #define IR_getLs0Margin()		IR_Ctrl.Ls0Margin
 #define IR_getLs1Margin()		IR_Ctrl.Ls1Margin
+#define IR_getGainAngleP()		Handcode.Gain_angle_p
+#define IR_getGainAngleD()		Handcode.Gain_angle_d
+#define IR_getGainSpeedP()		Handcode.Gain_speed_p
+
 
 /******************************************************************************/
 /*--------------------------------Enumerations--------------------------------*/
@@ -30,10 +34,17 @@ typedef struct{
 	boolean basicTest;
 }InfineonRacer_t;
 
+typedef struct{
+	float32 Gain_angle_p;
+	float32 Gain_angle_d;
+	float32 Gain_speed_p;
+}Handcode_t;
+
 /******************************************************************************/
 /*------------------------------Global variables------------------------------*/
 /******************************************************************************/
 IFX_EXTERN InfineonRacer_t IR_Ctrl;
+IFX_EXTERN Handcode_t Handcode;
 
 /******************************************************************************/
 /*-------------------------Function Prototypes--------------------------------*/

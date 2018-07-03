@@ -47,6 +47,10 @@ linescan_t	g_LineScan = {FALSE, 1000};
 /******************************************************************************/
 
 boolean AppShell_status(pchar args, void *data, IfxStdIf_DPipe *io);
+boolean AppShell_status2(pchar args, void *data, IfxStdIf_DPipe *io);
+boolean AppShell_gainPangle(pchar args, void *data, IfxStdIf_DPipe *io);
+boolean AppShell_gainDangle(pchar args, void *data, IfxStdIf_DPipe *io);
+boolean AppShell_gainPspeed(pchar args, void *data, IfxStdIf_DPipe *io);
 boolean AppShell_motor0vol(pchar args, void *data, IfxStdIf_DPipe *io);
 boolean AppShell_motor1vol(pchar args, void *data, IfxStdIf_DPipe *io);
 boolean AppShell_motor0en(pchar args, void *data, IfxStdIf_DPipe *io);
@@ -74,6 +78,10 @@ boolean AppShell_info(pchar args, void *data, IfxStdIf_DPipe *io);
 /** \brief Application shell command list */
 const Ifx_Shell_Command AppShell_commands[] = {
     {"status", "   : Show the application status", &g_AsclinShellInterface,       &AppShell_status,    },
+	{"status2", "   : Show the application status2", &g_AsclinShellInterface,       &AppShell_status2,    },
+	{"gpa", "      : GainP_Angle", &g_AsclinShellInterface,       &AppShell_gainPangle,    },
+	{"gda", "      : GainD_Angle", &g_AsclinShellInterface,       &AppShell_gainDangle,    },
+	{"gps", "      : GainP_Speed", &g_AsclinShellInterface,       &AppShell_gainPspeed,    },
     {"m0v", "      : Motor0Vol", &g_AsclinShellInterface,       &AppShell_motor0vol,    },
     {"m1v", "      : Motor1Vol", &g_AsclinShellInterface,       &AppShell_motor1vol,    },
     {"m0e", "      : Motor0Enable", &g_AsclinShellInterface,       &AppShell_motor0en,    },
@@ -230,6 +238,15 @@ boolean AppShell_status(pchar args, void *data, IfxStdIf_DPipe *io)
     return TRUE;
 }
 
+boolean AppShell_status2(pchar args, void *data, IfxStdIf_DPipe *io)
+{
+	AppShell_gainPangle(0, NULL_PTR, &g_AsclinShellInterface.stdIf.asc );
+	AppShell_gainDangle(0, NULL_PTR, &g_AsclinShellInterface.stdIf.asc );
+	AppShell_gainPspeed(0, NULL_PTR, &g_AsclinShellInterface.stdIf.asc );
+
+    return TRUE;
+}
+
 boolean AppShell_motor0vol(pchar args, void *data, IfxStdIf_DPipe *io)
 {
 	float32 vol;
@@ -247,6 +264,61 @@ boolean AppShell_motor0vol(pchar args, void *data, IfxStdIf_DPipe *io)
 
     return TRUE;
 }
+
+boolean AppShell_gainPangle(pchar args, void *data, IfxStdIf_DPipe *io)
+{
+	float32 vol;
+	if (Ifx_Shell_matchToken(&args, "?") != FALSE)
+    {
+        IfxStdIf_DPipe_print(io, "  Syntax     : gpa frac-value"ENDL);
+    }
+    else
+    {
+    	if(Ifx_Shell_parseFloat32(&args, &vol) == TRUE){
+    		Handcode.Gain_angle_p = vol;
+    	}
+    	IfxStdIf_DPipe_print(io, "  GainP_Angle: %4.2f fraction"ENDL, IR_getGainAngleP());
+    }
+
+    return TRUE;
+}
+
+boolean AppShell_gainDangle(pchar args, void *data, IfxStdIf_DPipe *io)
+{
+	float32 vol;
+	if (Ifx_Shell_matchToken(&args, "?") != FALSE)
+    {
+        IfxStdIf_DPipe_print(io, "  Syntax     : gda frac-value"ENDL);
+    }
+    else
+    {
+    	if(Ifx_Shell_parseFloat32(&args, &vol) == TRUE){
+    		Handcode.Gain_angle_d = vol;
+    	}
+    	IfxStdIf_DPipe_print(io, "  GainD_Angle: %4.4f fraction"ENDL, IR_getGainAngleD());
+    }
+
+    return TRUE;
+}
+
+boolean AppShell_gainPspeed(pchar args, void *data, IfxStdIf_DPipe *io)
+{
+	float32 vol;
+	if (Ifx_Shell_matchToken(&args, "?") != FALSE)
+    {
+        IfxStdIf_DPipe_print(io, "  Syntax     : gps frac-value"ENDL);
+    }
+    else
+    {
+    	if(Ifx_Shell_parseFloat32(&args, &vol) == TRUE){
+    		Handcode.Gain_speed_p = vol;
+    	}
+    	IfxStdIf_DPipe_print(io, "  GainP_Speed: %4.2f fraction"ENDL, IR_getGainSpeedP());
+    }
+
+    return TRUE;
+}
+
 
 boolean AppShell_motor1vol(pchar args, void *data, IfxStdIf_DPipe *io)
 {
