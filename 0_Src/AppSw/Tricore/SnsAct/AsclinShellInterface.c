@@ -563,11 +563,11 @@ void initSerialInterface(void)
         IfxAsclin_Asc_Pins ascPins = {
             .cts       = NULL_PTR,
             .ctsMode   = IfxPort_InputMode_noPullDevice,
-            .rx        = &IfxAsclin0_RXA_P14_1_IN,
+            .rx        = &IfxAsclin0_RXB_P15_3_IN,
             .rxMode    = IfxPort_InputMode_noPullDevice,
             .rts       = NULL_PTR,
             .rtsMode   = IfxPort_OutputMode_pushPull,
-            .tx        = &IfxAsclin0_TX_P14_0_OUT,
+            .tx        = &IfxAsclin0_TX_P15_2_OUT,
             .txMode    = IfxPort_OutputMode_pushPull,
             .pinDriver = IfxPort_PadDriver_cmosAutomotiveSpeed1
         };

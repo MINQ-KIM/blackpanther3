@@ -44,11 +44,11 @@ void appTaskfu_10ms(void)
 	if(task_cnt_10m == 1000){
 		task_cnt_10m = 0;
 	}
-
+	InfineonRacer_control();
 	if(task_cnt_10m%2 == 0){
 		BasicLineScan_run();
 		InfineonRacer_detectLane();
-		InfineonRacer_control();
+
 		InfineonRacer_Avoid(task_cnt_1m);
 //		InfinedonRacer_AEB();
 		BasicPort_run();
@@ -64,7 +64,6 @@ void appTaskfu_10ms(void)
 //		}
 		AsclinShellInterface_runLineScan();
 	}
-
 }
 
 void appTaskfu_100ms(void)

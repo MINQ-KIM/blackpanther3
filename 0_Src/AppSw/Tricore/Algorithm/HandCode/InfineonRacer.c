@@ -8,17 +8,17 @@
 /*-----------------------------------Macros-----------------------------------*/
 /******************************************************************************/
 
-#define GAIN_ANGLE_P 0.005	// 조향 제어 P Gain
-#define GAIN_ANGLE_D 0		// 조향 제어 D Gain
-#define GAIN_SPEED_P 1	// 속력 제어 P Gain
+#define GAIN_ANGLE_P 0.01	// 조향 제어 P Gain
+#define GAIN_ANGLE_D 0.00005	// 조향 제어 D Gain
+#define GAIN_SPEED_P 2		// 속력 제어 P Gain
 #define TIME_sampling 0.02	// Line Scan Camera Sampling Time
 
 /* Line Scan Camera Constant values*/
-#define S_START			3 	// 유용한 데이터의 시작
-#define S_FINISH		117	// 유용한 데이터의 끝
-#define S_CENTER		60		// 스캐너의 중앙 = 차량의 중앙
-#define L_0	8					// 직선에 잘 정렬되었을 때 좌측 Line pixel
-#define R_0	112					// 직선에 잘 정렬되었을 때 우측 Line pixel
+#define S_START			9 	// 유용한 데이터의 시작
+#define S_FINISH		115	// 유용한 데이터의 끝
+#define S_CENTER		62		// 스캐너의 중앙 = 차량의 중앙
+#define L_0	15					// 직선에 잘 정렬되었을 때 좌측 Line pixel
+#define R_0	110					// 직선에 잘 정렬되었을 때 우측 Line pixel
 
 /******************************************************************************/
 /*--------------------------------Enumerations--------------------------------*/
@@ -32,7 +32,8 @@ typedef enum car_state{
 
 typedef enum dash_info{
 	DASH_LEFT = 0,
-	DASH_RIGHT
+	DASH_RIGHT,
+	DASH_NONE
 }DASHLINE_state_t;	// 점선 상태 구분
 
 typedef enum scan_state{
@@ -63,7 +64,7 @@ SCAN_state_t SCAN_STATE;
 
 int OFFSET;			// OFFSET
 int ERROR_steer;	// 차량의 중앙과 도로의 중앙의 pixel거리
-int ERROR_pre;		// 이전 상태 Error
+int ERROR_pre_steer;		// 이전 상태 Error
 /******************************************************************************/
 /*-------------------------Function Prototypes--------------------------------*/
 /******************************************************************************/
@@ -81,46 +82,51 @@ int ACTION_STEER(int ERROR, int ERROR_pre);
 /******************************************************************************/
 void InfineonRacer_init(void){
 	CAR_STATE = NORMAL;
+	DASH_STATE = NONE;
 	SCAN_STATE = MIDDLE;
 
 	IR_setMotor0En(0.0);
-	IR_Motor.Motor0Vol = 0.25;
+	IR_Motor.Motor0Vol = 0.2;
 	IR_getSrvAngle() = 0.0;
 
-	OFFSET = 60;
+	OFFSET = 62;
 	ERROR_steer = 0;
 }
 
 void InfineonRacer_detectLane(void){
 
 	int pixel;			// Scan을 위한 반복문 변수
-	int Left_pixel;		// 좌측 라인의 pixel
-	int Right_pixel; 	// 우측 라인의 pixel
+	int Left_Line;		// 좌측 라인의 pixel
+	int Right_Line; 	// 우측 라인의 pixel
 
 	InfineonRacer_detectDashline();
 	InfineonRacer_crosswalk();
 	for(pixel = OFFSET; pixel >= S_START; pixel--)
 	{
-		if(IR_LineScan.adcResult[1][pixel] < 1200)
+		if(IR_LineScan.adcResult[1][pixel] < 1950)
 		{
-			Left_pixel = pixel;
+			Left_Line = pixel;
 			break;
 		}
+		else
+			Left_Line = 0;
 	}
 
 	for(pixel = OFFSET; pixel <= S_FINISH; pixel++)
 	{
-		if((IR_LineScan.adcResult[1][pixel] < 1200))
+		if((IR_LineScan.adcResult[1][pixel] < 1950))
 		{
-			Right_pixel = pixel;
+			Right_Line = pixel;
 			break;
 		}
+		else
+			Right_Line = 128;
 	}
 
-	SET_STATUS(Left_pixel, Right_pixel);
-	SET_OFFSET(Left_pixel, Right_pixel);
+	SET_STATUS(Left_Line, Right_Line);
+	SET_OFFSET(Left_Line, Right_Line);
 
-	ERROR_pre = ERROR_steer;
+	ERROR_pre_steer = ERROR_steer;
 	ERROR_steer = OFFSET - S_CENTER;
 }
 
@@ -128,11 +134,11 @@ void InfineonRacer_detectLane(void){
 void InfineonRacer_detectDashline(void)
 {
 	int pixel;
-	int DASH_LEFT_cnt;		// 좌측 점선 count 변수
-	int DASH_RIGHT_cnt;		// 우측 점선 count 변수
+	int Dash_left_cnt;		// 좌측 점선 count 변수
+	int Dash_right_cnt;		// 우측 점선 count 변수
 
-	DASH_LEFT_cnt = 0;
-	DASH_RIGHT_cnt = 0;
+	Dash_left_cnt = 0;
+	Dash_right_cnt = 0;
 
 	if((CAR_STATE == V_LIMIT) && (SCAN_STATE == MIDDLE))
 	{
@@ -140,7 +146,7 @@ void InfineonRacer_detectDashline(void)
 		{
 			if(IR_LineScan.adcResult[1][pixel] > 3000)
 			{
-				DASH_LEFT_cnt++;
+				Dash_left_cnt++;
 			}
 		}
 
@@ -148,14 +154,16 @@ void InfineonRacer_detectDashline(void)
 		{
 			if((IR_LineScan.adcResult[1][pixel] > 3000))
 			{
-				DASH_RIGHT_cnt++;
+				Dash_right_cnt++;
 			}
 		}
 
-		if(DASH_LEFT_cnt > DASH_RIGHT_cnt)
-			DASH_STATE = LEFT;
+		if(Dash_left_cnt > Dash_right_cnt)
+			DASH_STATE = DASH_LEFT;
+		else if(Dash_left_cnt < Dash_right_cnt)
+			DASH_STATE = DASH_RIGHT;
 		else
-			DASH_STATE = RIGHT;
+			DASH_STATE = DASH_NONE;
 	}
 }
 
@@ -163,19 +171,19 @@ void InfineonRacer_detectDashline(void)
 void InfineonRacer_crosswalk(void)
 {
 	int pixel;
-	int BLACK_pixel;
+	int Crossing_cnt;
 
-	BLACK_pixel = 0;
+	Crossing_cnt = 0;
 
 	for(pixel = S_START; pixel >= S_FINISH; pixel++)
 	{
-		if(IR_LineScan.adcResult[1][pixel] < 1200)
+		if(IR_LineScan.adcResult[1][pixel] < 1950)
 		{
-			BLACK_pixel++;
+			Crossing_cnt++;
 		}
 	}
 
-	if(BLACK_pixel >= 45)
+	if(Crossing_cnt >= 45)
 	{
 		switch (CAR_STATE){
 		case NORMAL :
@@ -238,15 +246,15 @@ void SET_OFFSET(int Left_pixel, int Right_pixel)
 	switch (SCAN_STATE){
 
 	case NONE :
-		OFFSET = 64; break;
+		OFFSET = 62; break;
 	case RIGHT :
-		OFFSET = S_CENTER - (R_0 - Right_pixel); break;
+		OFFSET = S_CENTER - (R_0 - Right_pixel); if(OFFSET < 0) OFFSET = S_START; break;
 	case OVER_RIGHT :
 		OFFSET = S_CENTER - (R_0 - Right_pixel); if(OFFSET < S_START)OFFSET = S_START; break;
 	case BIG_OVER_RIGHT :
 		OFFSET = S_START; break;
 	case LEFT :
-		OFFSET = S_CENTER + (Left_pixel - L_0); break;
+		OFFSET = S_CENTER + (Left_pixel - L_0); if(OFFSET > S_FINISH) OFFSET = S_FINISH; break;
 	case MIDDLE :
 		OFFSET = (Left_pixel + Right_pixel) / 2; break;
 	case OVER_LEFT :
@@ -257,17 +265,24 @@ void SET_OFFSET(int Left_pixel, int Right_pixel)
 }
 
 void InfineonRacer_control(void){
-	float32 MotorVol;
-	uint32 MotorVol_int;
+	float Motorduty;
+	//uint32 MotorVol_int;
 
 	int Angle;
 
 	if(CAR_STATE == NORMAL)
 		{
-			Angle = ACTION_STEER(ERROR_steer, ERROR_pre);
-//			MotorVol_int = (int)((0.35 - GAIN_SPEED_P * Angle)*100);
-			MotorVol = (0.35 - (GAIN_SPEED_P * Angle));
-			IR_Motor.Motor0Vol = MotorVol;
+			Angle = ACTION_STEER(ERROR_steer, ERROR_pre_steer);
+			if(Angle < 0)
+				Angle = -Angle;
+
+//			Motorduty = (0.2 - (GAIN_SPEED_P * Angle));
+//
+//			if(Motorduty <0)
+//				Motorduty = - Motorduty;
+//			if(Motorduty > 0.2)
+//				Motorduty = 0.2;
+//			IR_Motor.Motor0Vol = Motorduty;
 		}
 
 	if(CAR_STATE == V_LIMIT)
@@ -287,28 +302,20 @@ int ACTION_STEER(int ERROR, int ERROR_pre)
 	/* LEFT */
 	if( ANGLE < -0.2)
 		IR_getSrvAngle() = -0.2;
-	else if((ANGLE < -0.15) && (ANGLE >= -0.2))
+	else if((ANGLE < -0.1) && (ANGLE >= -0.2))
 		IR_getSrvAngle() = -0.15;
-	else if((ANGLE < -0.10) && (ANGLE >= -0.15))
-		IR_getSrvAngle() = -0.10;
 	else if((ANGLE < -0.05) && (ANGLE >= -0.1))
-		IR_getSrvAngle() = -0.05;
-
+		IR_getSrvAngle() = -0.1;
 	else if((ANGLE <= 0.05) && (ANGLE >= -0.05))
 		IR_getSrvAngle() = 0.0;
 
 	/* RIGHT */
 	else if((ANGLE > 0.05) && (ANGLE <= 0.1))
-		IR_getSrvAngle() = 0.05;
-	else if((ANGLE > 0.10) && (ANGLE <= 0.15))
-		IR_getSrvAngle() = 0.10;
-	else if((ANGLE > 0.15) && (ANGLE <= 0.2))
+		IR_getSrvAngle() = 0.1;
+	else if((ANGLE > 0.1) && (ANGLE <= 0.2))
 		IR_getSrvAngle() = 0.15;
 	else if(ANGLE > 0.2)
 		IR_getSrvAngle() = 0.2;
-
-	else
-		IR_getSrvAngle() = 0.0;
 
 	return (ANGLE);
 }
@@ -327,18 +334,18 @@ void InfineonRacer_Avoid(sint32 task_cnt)
 			{
 				IR_getSrvAngle() = -0.1;
 				task_cnt=0;
-				while(task_cnt <= 200)
+				while(task_cnt <= 150)
 				{}
 
-				if((IR_getChn15() < 1.1)&&(task_cnt>=200))
+				if((IR_getChn15() < 1.1)&&(task_cnt>=150))
 				{
 					IR_getSrvAngle() = 0.1;
 					task_cnt=0;
-					while(task_cnt <= 150)
+					while(task_cnt <= 100)
 					{}
 				}
 
-				if(task_cnt>=150)
+				if(task_cnt>=100)
 				{
 					IR_getSrvAngle() = 0.0;
 				}
@@ -348,18 +355,18 @@ void InfineonRacer_Avoid(sint32 task_cnt)
 			{
 				IR_getSrvAngle() = 0.1;
 				task_cnt=0;
-				while(task_cnt <= 200)
+				while(task_cnt <= 150)
 				{}
 
-				if((IR_getChn15() < 1.1)&&(task_cnt>=200))
+				if((IR_getChn15() < 1.1)&&(task_cnt>=150))
 				{
 					IR_getSrvAngle() = -0.1;
 					task_cnt=0;
-					while(task_cnt <= 150)
+					while(task_cnt <= 100)
 					{}
 				}
 
-				if(task_cnt>=150)
+				if(task_cnt>=100)
 				{
 					IR_getSrvAngle() = 0.0;
 				}
