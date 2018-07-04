@@ -48,6 +48,8 @@ linescan_t	g_LineScan = {FALSE, 1000};
 
 boolean AppShell_status(pchar args, void *data, IfxStdIf_DPipe *io);
 boolean AppShell_status2(pchar args, void *data, IfxStdIf_DPipe *io);
+boolean AppShell_carState(pchar args, void *data, IfxStdIf_DPipe *io);
+boolean AppShell_scanState(pchar args, void *data, IfxStdIf_DPipe *io);
 boolean AppShell_gainPangle(pchar args, void *data, IfxStdIf_DPipe *io);
 boolean AppShell_gainDangle(pchar args, void *data, IfxStdIf_DPipe *io);
 boolean AppShell_gainPspeed(pchar args, void *data, IfxStdIf_DPipe *io);
@@ -240,9 +242,12 @@ boolean AppShell_status(pchar args, void *data, IfxStdIf_DPipe *io)
 
 boolean AppShell_status2(pchar args, void *data, IfxStdIf_DPipe *io)
 {
+	AppShell_carState(0, NULL_PTR, &g_AsclinShellInterface.stdIf.asc );
+	AppShell_scanState(0, NULL_PTR, &g_AsclinShellInterface.stdIf.asc );
 	AppShell_gainPangle(0, NULL_PTR, &g_AsclinShellInterface.stdIf.asc );
 	AppShell_gainDangle(0, NULL_PTR, &g_AsclinShellInterface.stdIf.asc );
 	AppShell_gainPspeed(0, NULL_PTR, &g_AsclinShellInterface.stdIf.asc );
+
 
     return TRUE;
 }
@@ -265,6 +270,38 @@ boolean AppShell_motor0vol(pchar args, void *data, IfxStdIf_DPipe *io)
     return TRUE;
 }
 
+boolean AppShell_carState(pchar args, void *data, IfxStdIf_DPipe *io)
+{
+	float32 vol;
+	if (Ifx_Shell_matchToken(&args, "?") != FALSE)
+    {
+        IfxStdIf_DPipe_print(io, "  Syntax     : Show Car State Value"ENDL);
+    }
+    else
+    {
+
+    	IfxStdIf_DPipe_print(io, "  CarState : %1d "ENDL, CAR_STATE);
+    }
+
+    return TRUE;
+}
+
+boolean AppShell_scanState(pchar args, void *data, IfxStdIf_DPipe *io)
+{
+	float32 vol;
+	if (Ifx_Shell_matchToken(&args, "?") != FALSE)
+    {
+        IfxStdIf_DPipe_print(io, "  Syntax     : Show Scan State Value"ENDL);
+    }
+    else
+    {
+    	IfxStdIf_DPipe_print(io, "  Scan State : %1d fraction"ENDL, SCAN_STATE);
+    }
+
+    return TRUE;
+}
+
+
 boolean AppShell_gainPangle(pchar args, void *data, IfxStdIf_DPipe *io)
 {
 	float32 vol;
@@ -277,7 +314,7 @@ boolean AppShell_gainPangle(pchar args, void *data, IfxStdIf_DPipe *io)
     	if(Ifx_Shell_parseFloat32(&args, &vol) == TRUE){
     		Handcode.Gain_angle_p = vol;
     	}
-    	IfxStdIf_DPipe_print(io, "  GainP_Angle: %4.2f fraction"ENDL, IR_getGainAngleP());
+    	IfxStdIf_DPipe_print(io, "  GainP_Angle: %4.4f fraction"ENDL, IR_getGainAngleP());
     }
 
     return TRUE;
@@ -295,7 +332,7 @@ boolean AppShell_gainDangle(pchar args, void *data, IfxStdIf_DPipe *io)
     	if(Ifx_Shell_parseFloat32(&args, &vol) == TRUE){
     		Handcode.Gain_angle_d = vol;
     	}
-    	IfxStdIf_DPipe_print(io, "  GainD_Angle: %4.4f fraction"ENDL, IR_getGainAngleD());
+    	IfxStdIf_DPipe_print(io, "  GainD_Angle: %4.6f fraction"ENDL, IR_getGainAngleD());
     }
 
     return TRUE;

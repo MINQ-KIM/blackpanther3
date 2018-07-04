@@ -23,7 +23,22 @@
 /*--------------------------------Enumerations--------------------------------*/
 /******************************************************************************/
 
+typedef enum scan_state{    	// Line scan camera state machine
+	NONE = 11,
+	RIGHT = 12,
+	OVER_RIGHT = 13,
+	BIG_OVER_RIGHT = 14,
+	LEFT = 21,
+	MIDDLE = 22,
+	OVER_LEFT = 31,
+	BIG_OVER_LEFT = 41
+}SCAN_state_t;
 
+typedef enum car_state{
+	NORMAL = 0,
+	V_LIMIT,
+	AEB
+}CAR_state_t;	// 주행 상태 구분
 
 /******************************************************************************/
 /*-----------------------------Data Structures--------------------------------*/
@@ -40,11 +55,14 @@ typedef struct{
 	float32 Gain_speed_p;
 }Handcode_t;
 
+
 /******************************************************************************/
 /*------------------------------Global variables------------------------------*/
 /******************************************************************************/
 IFX_EXTERN InfineonRacer_t IR_Ctrl;
 IFX_EXTERN Handcode_t Handcode;
+IFX_EXTERN SCAN_state_t SCAN_STATE;
+IFX_EXTERN CAR_state_t CAR_STATE;
 
 /******************************************************************************/
 /*-------------------------Function Prototypes--------------------------------*/

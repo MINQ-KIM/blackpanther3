@@ -25,11 +25,7 @@
 /*--------------------------------Enumerations--------------------------------*/
 /******************************************************************************/
 
-typedef enum car_state{
-	NORMAL = 0,
-	V_LIMIT,
-	AEB
-}CAR_state_t;	// 주행 상태 구분
+
 
 typedef enum dash_info{
 	DASH_LEFT = 0,
@@ -37,16 +33,7 @@ typedef enum dash_info{
 	DASH_NONE
 }DASHLINE_state_t;	// 점선 상태 구분
 
-typedef enum scan_state{
-	NONE = 11,
-	RIGHT = 12,
-	OVER_RIGHT = 13,
-	BIG_OVER_RIGHT = 14,
-	LEFT = 21,
-	MIDDLE = 22,
-	OVER_LEFT = 31,
-	BIG_OVER_LEFT = 41
-}SCAN_state_t;	// Line scan camera state machine
+	// Line scan camera state machine
 
 /******************************************************************************/
 /*-----------------------------Data Structures--------------------------------*/
