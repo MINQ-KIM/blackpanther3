@@ -290,7 +290,7 @@ void InfineonRacer_control(void){
 int ACTION_STEER(int ERROR, int ERROR_pre)
 {
 	float ANGLE; 	// Input of Servo motor
-	ANGLE = (IR_getGainAngleP() * ERROR) - (IR_getGainAngleP() * (ERROR-ERROR_pre)/TIME_sampling);
+	ANGLE = (IR_getGainAngleP() * ERROR) - (IR_getGainAngleD() * (ERROR-ERROR_pre)/TIME_sampling);
 
 	/* LOAD PROTECTION */
 	/* LEFT */

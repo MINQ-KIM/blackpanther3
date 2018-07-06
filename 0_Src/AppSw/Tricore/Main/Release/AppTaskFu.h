@@ -14,6 +14,7 @@ IFX_EXTERN boolean task_flag_1m;
 IFX_EXTERN boolean task_flag_10m;
 IFX_EXTERN boolean task_flag_100m;
 IFX_EXTERN boolean task_flag_1000m;
+IFX_EXTERN float IR_Result[20];
 
 void appTaskfu_init(void);
 void appTaskfu_1ms(void);

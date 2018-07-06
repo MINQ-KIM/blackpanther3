@@ -36,12 +36,18 @@ typedef struct{
 	boolean enable;
 	sint32	period_ms;
 } linescan_t;
+
+typedef struct{
+	boolean enable;
+	sint32	period_ms;
+} irscan_t;
 /******************************************************************************/
 /*------------------------------Global variables------------------------------*/
 /******************************************************************************/
 
 App_AsclinShellInterface g_AsclinShellInterface; /**< \brief Demo information */
 linescan_t	g_LineScan = {FALSE, 1000};
+irscan_t	g_IrScan = {FALSE, 1000};
 /******************************************************************************/
 /*-------------------------Function Prototypes--------------------------------*/
 /******************************************************************************/
@@ -67,12 +73,13 @@ boolean AppShell_led110(pchar args, void *data, IfxStdIf_DPipe *io);
 boolean AppShell_linescan0(pchar args, void *data, IfxStdIf_DPipe *io);
 boolean AppShell_linescan1(pchar args, void *data, IfxStdIf_DPipe *io);
 boolean AppShell_monlinescan(pchar args, void *data, IfxStdIf_DPipe *io);
+boolean AppShell_monirscan(pchar args, void *data, IfxStdIf_DPipe *io);
 boolean AppShell_vadcbg1(pchar args, void *data, IfxStdIf_DPipe *io);
 boolean AppShell_enc(pchar args, void *data, IfxStdIf_DPipe *io);
 boolean AppShell_port00_0(pchar args, void *data, IfxStdIf_DPipe *io);
 boolean AppShell_port00_1(pchar args, void *data, IfxStdIf_DPipe *io);
 boolean AppShell_info(pchar args, void *data, IfxStdIf_DPipe *io);
-
+//boolean AppShell_IRscan(pchar args, void *data, IfxStdIf_DPipe *io);
 /******************************************************************************/
 /*------------------------Private Variables/Constants-------------------------*/
 /******************************************************************************/
@@ -80,7 +87,8 @@ boolean AppShell_info(pchar args, void *data, IfxStdIf_DPipe *io);
 /** \brief Application shell command list */
 const Ifx_Shell_Command AppShell_commands[] = {
     {"status", "   : Show the application status", &g_AsclinShellInterface,       &AppShell_status,    },
-	{"status2", "   : Show the application status2", &g_AsclinShellInterface,       &AppShell_status2,    },
+	{"status2", "  : Show the application status2", &g_AsclinShellInterface,       &AppShell_status2,    },
+	{"IR", "       : IRScan", &g_AsclinShellInterface,       &AsclinShellInterface_ShowIrAvg,    },
 	{"gpa", "      : GainP_Angle", &g_AsclinShellInterface,       &AppShell_gainPangle,    },
 	{"gda", "      : GainD_Angle", &g_AsclinShellInterface,       &AppShell_gainDangle,    },
 	{"gps", "      : GainP_Speed", &g_AsclinShellInterface,       &AppShell_gainPspeed,    },
@@ -98,6 +106,7 @@ const Ifx_Shell_Command AppShell_commands[] = {
     {"ls0", "      : LineScan0", &g_AsclinShellInterface,       &AppShell_linescan0,    },
     {"ls1", "      : LineScan1", &g_AsclinShellInterface,       &AppShell_linescan1,    },
     {"mls", "      : Monitoring LineScan", &g_AsclinShellInterface,       &AppShell_monlinescan,    },
+	{"mirs", "     : Monitoring IrScan", &g_AsclinShellInterface,       &AppShell_monirscan,    },
     {"vadc", "     : Vadc Backgound 1", &g_AsclinShellInterface,       &AppShell_vadcbg1,    },
     {"enc", "      : Encoder", &g_AsclinShellInterface,       &AppShell_enc,    },
     {"p00_0", "    : Port00_0", &g_AsclinShellInterface,       &AppShell_port00_0,    },
@@ -240,6 +249,22 @@ boolean AppShell_status(pchar args, void *data, IfxStdIf_DPipe *io)
     return TRUE;
 }
 
+//boolean AppShell_IRscan(pchar args, void *data, IfxStdIf_DPipe *io){
+//	sint32 i;
+//	if (Ifx_Shell_matchToken(&args, "?") != FALSE)
+//    {
+//        IfxStdIf_DPipe_print(io, "  Syntax     : IR "ENDL);
+//    }
+//    else
+//    {
+//    	for(i = 0; i<20; i++){
+//    		IfxStdIf_DPipe_print(io, "%4.4f,",IR_Result[i]);
+//    	}
+//		IfxStdIf_DPipe_print(io, "%4.4f"ENDL,IR_Result[i]);
+//    }
+//    return TRUE;
+//}
+
 boolean AppShell_status2(pchar args, void *data, IfxStdIf_DPipe *io)
 {
 	AppShell_carState(0, NULL_PTR, &g_AsclinShellInterface.stdIf.asc );
@@ -248,6 +273,28 @@ boolean AppShell_status2(pchar args, void *data, IfxStdIf_DPipe *io)
 	AppShell_gainDangle(0, NULL_PTR, &g_AsclinShellInterface.stdIf.asc );
 	AppShell_gainPspeed(0, NULL_PTR, &g_AsclinShellInterface.stdIf.asc );
 
+
+    return TRUE;
+}
+
+boolean AppShell_monirscan(pchar args, void *data, IfxStdIf_DPipe *io)
+{
+	sint32 period_ms;
+	if (Ifx_Shell_matchToken(&args, "?") != FALSE)
+    {
+        IfxStdIf_DPipe_print(io, "  Syntax     : mirs period_ms"ENDL);
+    }
+    else
+    {
+    	if(Ifx_Shell_parseSInt32(&args, &period_ms) != FALSE){
+    		g_IrScan.period_ms = period_ms;
+    		g_IrScan.enable = TRUE;
+    	}else
+    	{
+    		g_IrScan.enable = FALSE;
+    	}
+    	IfxStdIf_DPipe_print(io, "  mirs: %4d "ENDL, g_IrScan.period_ms);
+    }
 
     return TRUE;
 }
@@ -672,11 +719,13 @@ void initSerialInterface(void)
         IfxAsclin_Asc_Pins ascPins = {
             .cts       = NULL_PTR,
             .ctsMode   = IfxPort_InputMode_noPullDevice,
-            .rx        = &IfxAsclin0_RXB_P15_3_IN,
+            //.rx        = &IfxAsclin0_RXA_P14_1_IN,
+			.rx        = &IfxAsclin0_RXB_P15_3_IN,
             .rxMode    = IfxPort_InputMode_noPullDevice,
             .rts       = NULL_PTR,
             .rtsMode   = IfxPort_OutputMode_pushPull,
-            .tx        = &IfxAsclin0_TX_P15_2_OUT,
+            //.tx        = &IfxAsclin0_TX_P14_0_OUT,
+			.tx        = &IfxAsclin0_TX_P15_2_OUT,
             .txMode    = IfxPort_OutputMode_pushPull,
             .pinDriver = IfxPort_PadDriver_cmosAutomotiveSpeed1
         };
@@ -753,6 +802,45 @@ void AsclinShellInterface_runLineScan(void)
 			for(i = 0; i<128; i++){
 			IfxStdIf_DPipe_print(&g_AsclinShellInterface.stdIf.asc, "%5d,%5d"ENDL,IR_LineScan.adcResult[0][i], IR_LineScan.adcResult[1][i]);
 			}
+		}
+	}
+}
+
+//void AsclinShellInterface_runIrScan(void)
+//{
+//	sint32 i;
+//	static sint32 cnt;
+//
+//	if(g_IrScan.enable == TRUE)
+//	{
+//		cnt--;
+//		if(cnt < 0){
+//			cnt = (sint32) g_IrScan.period_ms/10;
+//
+//			IfxStdIf_DPipe_print(&g_AsclinShellInterface.stdIf.asc, "  Ir Sensor Value: %4.2f,"ENDL,IR_getChn15());
+//
+//
+//		}
+//	}
+//}
+
+void AsclinShellInterface_ShowIrAvg(void)
+{
+	sint32 i;
+	static sint32 cnt;
+	static sint32 sum = 0;
+	if(g_IrScan.enable == TRUE)
+	{
+		cnt--;
+		if(cnt < 0){
+			cnt = (sint32) g_IrScan.period_ms/10;
+			IfxStdIf_DPipe_print(&g_AsclinShellInterface.stdIf.asc, "Sensor Value : ");
+			for(i = 0;i <= 19;){
+				IfxStdIf_DPipe_print(&g_AsclinShellInterface.stdIf.asc, "[%4.2f],",IR_Result[i]);
+				sum = sum + IR_Result[i++];
+			}
+			IfxStdIf_DPipe_print(&g_AsclinShellInterface.stdIf.asc, ENDL"  Ir Sensor Average Value: %4.2f,"ENDL,sum/20);
+			sum = 0;
 		}
 	}
 }

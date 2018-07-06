@@ -138,7 +138,7 @@ void BasicVadcBgScan_run(void)
                 conversionResult = IfxVadc_Adc_getResult(&g_VadcBackgroundScan.adcChannel[chnIx]);
             } while (!conversionResult.B.VF);
 
-			IR_AdcResult[chnIx] = (float32) conversionResult.B.RESULT / 4095;
+			IR_AdcResult[chnIx] = (float32) conversionResult.B.RESULT / 819;
 
         }
 }
